@@ -1,8 +1,26 @@
 const http = require("http");
 const path = require("path");
 const { pathToFileURL } = require("url");
+const crypto = require("crypto");
+const { attachCodexNativeGateway } = require("./server/codexNativeGateway.cjs");
 
 const origCreate = http.createServer.bind(http);
+process.env.CODEX_NATIVE_INTERNAL_SECRET ||= crypto.randomBytes(32).toString("hex");
+
+function skipClaimedUpgrade(server, gateway) {
+  const originalOn = server.on.bind(server);
+  const originalOnce = server.once.bind(server);
+  const wrap = (listener) => (request, socket, head) => {
+    if (!gateway.handles(request)) return listener(request, socket, head);
+  };
+  server.on = function on(event, listener) {
+    return originalOn(event, event === "upgrade" ? wrap(listener) : listener);
+  };
+  server.addListener = server.on;
+  server.once = function once(event, listener) {
+    return originalOnce(event, event === "upgrade" ? wrap(listener) : listener);
+  };
+}
 
 let backgroundRefreshStarted = false;
 
@@ -62,6 +80,10 @@ http.createServer = (...args) => {
     return handler(req, res);
   };
   const server = origCreate(...rest, wrapped);
+  const gateway = attachCodexNativeGateway(server, {
+    secret: process.env.CODEX_NATIVE_INTERNAL_SECRET,
+  });
+  skipClaimedUpgrade(server, gateway);
   server.once("listening", () => {
     startBackgroundTokenRefreshFromCustomServer();
   });
