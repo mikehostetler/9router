@@ -38,15 +38,15 @@ async function affinitySecret() {
   if (state.secret) return state.secret;
   try {
     state.secret = await fs.readFile(AFFINITY_SECRET_FILE);
-  } catch {
-    state.secret = crypto.randomBytes(32);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
     await fs.mkdir(path.dirname(AFFINITY_SECRET_FILE), { recursive: true });
-    const tempPath = `${AFFINITY_SECRET_FILE}.${process.pid}.tmp`;
-    await fs.writeFile(tempPath, state.secret, { mode: 0o600 });
+    const candidate = crypto.randomBytes(32);
     try {
-      await fs.rename(tempPath, AFFINITY_SECRET_FILE);
-    } catch (error) {
-      if (error.code !== "EEXIST") throw error;
+      await fs.writeFile(AFFINITY_SECRET_FILE, candidate, { mode: 0o600, flag: "wx" });
+      state.secret = candidate;
+    } catch (writeError) {
+      if (writeError.code !== "EEXIST") throw writeError;
       state.secret = await fs.readFile(AFFINITY_SECRET_FILE);
     }
   }
