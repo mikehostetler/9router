@@ -89,7 +89,7 @@ describe("Codex Native transparent HTTP transport", () => {
   });
 
   it("relays the exact request bytes, unknown fields, SSE bytes, status, and native response headers", async () => {
-    const original = '{"model":"gpt-native","input":[],"future_field":{"kept":true},"stream":true}';
+    const original = '{"model":"gpt-native","input":[],"service_tier":"priority","future_field":{"kept":true},"stream":true}';
     const upstreamSse = "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"hi\"}\n\n";
     mocks.fetch.mockResolvedValue(new Response(upstreamSse, {
       status: 200,

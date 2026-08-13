@@ -30,7 +30,13 @@ describe("Codex Native routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCatalog.mockResolvedValue({
-      models: [{ slug: "gpt-native", display_name: "GPT Native" }],
+      models: [{
+        slug: "gpt-native",
+        display_name: "GPT Native",
+        default_service_tier: null,
+        service_tiers: [{ id: "priority", name: "Fast" }],
+        additional_speed_tiers: ["fast"],
+      }],
       etag: '"catalog-etag"',
       source: "upstream",
       stale: false,
@@ -55,7 +61,13 @@ describe("Codex Native routes", () => {
     expect(response.headers.get("x-models-etag")).toBe('"catalog-etag"');
     expect(mocks.getCatalog).toHaveBeenCalledWith({ clientVersion: "next-canary+ws" });
     await expect(response.json()).resolves.toEqual({
-      models: [{ slug: "gpt-native", display_name: "GPT Native" }],
+      models: [{
+        slug: "gpt-native",
+        display_name: "GPT Native",
+        default_service_tier: null,
+        service_tiers: [{ id: "priority", name: "Fast" }],
+        additional_speed_tiers: ["fast"],
+      }],
     });
   });
 
